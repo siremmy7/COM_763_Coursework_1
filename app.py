@@ -3,63 +3,72 @@ import pickle
 import numpy as np
 
 # ============================================
-# Load Trained Model
+# PAGE CONFIG
 # ============================================
-model = pickle.load(open("model.pkl", "rb"))
-
-# ============================================
-# App Title
-# ============================================
-st.title("🚗 Road Accident Severity Prediction")
-st.write("Enter accident details to predict severity")
+st.set_page_config(page_title="Real Estate Predictor", page_icon="🏠")
 
 # ============================================
-# User Inputs (EDIT based on your dataset)
+# LOAD MODEL
 # ============================================
+@st.cache_resource
+def load_model():
+    with open("model.pkl", "rb") as file:
+        model = pickle.load(file)
+    return model
 
-weather = st.selectbox(
-    "Weather Condition",
-    ["Clear", "Rain", "Fog"]
-)
-
-road_type = st.selectbox(
-    "Road Type",
-    ["Single Carriageway", "Dual Carriageway", "Roundabout"]
-)
-
-light = st.selectbox(
-    "Light Condition",
-    ["Daylight", "Dark", "Street Lighting"]
-)
+model = load_model()
 
 # ============================================
-# Convert Inputs to Numerical (IMPORTANT)
+# TITLE
 # ============================================
-
-weather_map = {"Clear": 0, "Rain": 1, "Fog": 2}
-road_map = {"Single Carriageway": 0, "Dual Carriageway": 1, "Roundabout": 2}
-light_map = {"Daylight": 0, "Dark": 1, "Street Lighting": 2}
-
-input_data = np.array([[
-    weather_map[weather],
-    road_map[road_type],
-    light_map[light]
-]])
+st.title("🏠 Real Estate Price Prediction System")
+st.markdown("Predict house prices using a trained Random Forest model.")
 
 # ============================================
-# Prediction
+# SIDEBAR INPUTS
 # ============================================
+st.sidebar.header("Enter Property Details")
 
-if st.button("Predict Severity"):
-    prediction = model.predict(input_data)
+x1 = st.sidebar.number_input("Transaction Date", value=2013.0)
+x2 = st.sidebar.slider("House Age (years)", 0.0, 50.0, 10.0)
+x3 = st.sidebar.number_input("Distance to MRT (meters)", value=300.0)
+x4 = st.sidebar.slider("Number of Convenience Stores", 0, 15, 5)
+x5 = st.sidebar.number_input("Latitude", value=24.97)
+x6 = st.sidebar.number_input("Longitude", value=121.54)
 
-    # Map output to labels (EDIT based on your dataset)
-    severity_map = {
-        0: "Slight",
-        1: "Serious",
-        2: "Fatal"
-    }
+# ============================================
+# PREPARE INPUT DATA
+# ============================================
+input_data = np.array([[x1, x2, x3, x4, x5, x6]])
 
-    result = severity_map.get(prediction[0], "Unknown")
+# ============================================
+# DISPLAY INPUT SUMMARY
+# ============================================
+st.subheader("📊 Input Summary")
+st.write({
+    "Transaction Date": x1,
+    "House Age": x2,
+    "Distance to MRT": x3,
+    "Convenience Stores": x4,
+    "Latitude": x5,
+    "Longitude": x6
+})
 
-    st.success(f"Predicted Accident Severity: {result}")
+# ============================================
+# PREDICTION BUTTON
+# ============================================
+if st.button("🔍 Predict Price"):
+    try:
+        prediction = model.predict(input_data)
+
+        st.success(f"💰 Estimated House Price: {prediction[0]:.2f}")
+
+    except Exception as e:
+        st.error("❌ Error making prediction. Check input format.")
+        st.write(e)
+
+# ============================================
+# FOOTER
+# ============================================
+st.markdown("---")
+st.markdown("Developed for COM763 - Advanced Machine Learning Coursework")
